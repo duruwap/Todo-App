@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Tasks - 스마트 할 일 관리 (Red Edition)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- 좌측 사이드바: 통계 대시보드 & 필터 & 컨트롤 타워 (데스크톱 최적화) -->
+    <aside class="sidebar-panel">
+      <!-- 헤더 & 테마 토글 -->
+      <header class="app-header">
+        <div class="header-top">
+          <div class="header-title-group">
+            <span class="app-logo-icon">✨</span>
+            <h1 class="app-title">My Tasks</h1>
+          </div>
+          <button type="button" id="theme-toggle" class="icon-btn theme-toggle-btn" aria-label="테마 전환" title="테마 전환">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+        <div class="header-status-row">
+          <span id="remaining-badge" class="badge badge-remaining" title="남은 할 일 개수">0개 남음</span>
+          <span id="today-count-badge" class="badge badge-today">📅 오늘 추가: 0개</span>
+        </div>
+      </header>
+
+      <!-- 진행률 대시보드 -->
+      <section class="dashboard-section" aria-label="진행 현황 대시보드">
+        <div class="progress-card">
+          <div class="progress-info">
+            <span class="progress-title">전체 달성률</span>
+            <span id="progress-text" class="progress-percentage">0/0 완료 (0%)</span>
+          </div>
+          <div class="progress-track">
+            <div id="main-progress-bar" class="progress-fill" style="width: 0%;"></div>
+          </div>
+
+          <!-- 카테고리별 미니 진행률 -->
+          <div class="mini-progress-list">
+            <div class="mini-progress-item category-work">
+              <div class="mini-info">
+                <span class="cat-label-text">💼 업무</span>
+                <span id="work-progress-text" class="cat-count-text">0/0 (0%)</span>
+              </div>
+              <div class="mini-track">
+                <div id="work-progress-bar" class="mini-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="mini-progress-item category-personal">
+              <div class="mini-info">
+                <span class="cat-label-text">🏠 개인</span>
+                <span id="personal-progress-text" class="cat-count-text">0/0 (0%)</span>
+              </div>
+              <div class="mini-track">
+                <div id="personal-progress-bar" class="mini-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="mini-progress-item category-study">
+              <div class="mini-info">
+                <span class="cat-label-text">📚 공부</span>
+                <span id="study-progress-text" class="cat-count-text">0/0 (0%)</span>
+              </div>
+              <div class="mini-track">
+                <div id="study-progress-bar" class="mini-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 카테고리 필터 섹션 -->
+      <section class="filter-section">
+        <h2 class="section-subtitle">카테고리 필터</h2>
+        <div class="filter-tabs" role="tablist" aria-label="카테고리 필터">
+          <button type="button" class="filter-btn active" data-filter="all" title="단축키: Alt+1">
+            <span class="filter-icon">📌</span>
+            <span class="filter-name">전체 보기</span>
+            <span id="filter-count-all" class="filter-pill">0</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="work" title="단축키: Alt+2">
+            <span class="filter-icon">💼</span>
+            <span class="filter-name">업무</span>
+            <span id="filter-count-work" class="filter-pill">0</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="personal" title="단축키: Alt+3">
+            <span class="filter-icon">🏠</span>
+            <span class="filter-name">개인</span>
+            <span id="filter-count-personal" class="filter-pill">0</span>
+          </button>
+          <button type="button" class="filter-btn" data-filter="study" title="단축키: Alt+4">
+            <span class="filter-icon">📚</span>
+            <span class="filter-name">공부</span>
+            <span id="filter-count-study" class="filter-pill">0</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 데이터 백업/복원 및 단축키 가이드 푸터 -->
+      <footer class="sidebar-footer">
+        <div class="backup-actions">
+          <button type="button" id="export-btn" class="btn btn-outline btn-xs" title="JSON 파일로 백업">💾 JSON 백업</button>
+          <button type="button" id="import-btn-trigger" class="btn btn-outline btn-xs" title="JSON 파일에서 복원">📂 JSON 복원</button>
+          <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        </div>
+        <div class="shortcut-guide">
+          <div class="guide-item"><kbd>Alt+N</kbd> 입력창 포커스</div>
+          <div class="guide-item"><kbd>Alt+1~4</kbd> 필터 전환</div>
+          <div class="guide-item">💡 더블클릭으로 인라인 수정</div>
+        </div>
+      </footer>
+    </aside>
+
+    <!-- 우측 메인 워크스페이스: 입력창, 툴바, 할 일 목록 -->
+    <main class="main-workspace">
+      
+      <!-- 스마트 할 일 입력 섹션 (키워드 자동 분류 기능 탑재) -->
+      <section class="input-card">
+        <form id="todo-form" class="todo-form" onsubmit="return false;">
+          <div class="form-row">
+            <div class="category-select-wrapper">
+              <select id="todo-category" class="category-select" aria-label="카테고리 선택">
+                <option value="work">💼 업무</option>
+                <option value="personal">🏠 개인</option>
+                <option value="study">📚 공부</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="todo-input" 
+                class="todo-input" 
+                placeholder="새로운 할 일을 입력하세요... (단축키: Alt+N)" 
+                autocomplete="off"
+                aria-label="새 할 일 입력"
+              >
+            </div>
+            <button type="submit" id="add-btn" class="btn btn-primary add-btn" aria-label="할 일 추가">
+              <span class="btn-text">추가</span>
+            </button>
+          </div>
+
+          <!-- 키워드 자동 분류 피드백 배너 -->
+          <div id="auto-cat-hint" class="auto-cat-hint hidden">
+            <span class="hint-icon">⚡</span>
+            <span id="auto-cat-text" class="hint-text"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- 툴바 섹션: 검색창 & 정렬 드롭다운 & 일괄 삭제 -->
+      <section class="toolbar-section">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="search" 
+            id="search-input" 
+            class="search-input" 
+            placeholder="할 일 실시간 검색..." 
+            aria-label="할 일 검색"
+          >
+        </div>
+        <div class="tool-actions">
+          <div class="sort-wrapper">
+            <span class="sort-icon">↕️</span>
+            <select id="sort-select" class="sort-select" aria-label="정렬 기준 선택">
+              <option value="custom">사용자 지정 (드래그순)</option>
+              <option value="created-desc">생성일 최신순</option>
+              <option value="created-asc">생성일 오래된순</option>
+              <option value="category">카테고리순</option>
+              <option value="status">완료 상태순</option>
+            </select>
+          </div>
+          <button type="button" id="clear-completed-btn" class="btn btn-secondary btn-sm" title="완료된 모든 항목 삭제">
+            <span>완료 항목 일괄 삭제</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 할 일 목록 영역 -->
+      <section class="list-section">
+        <ul id="todo-list" class="todo-list" aria-label="할 일 목록">
+          <!-- 자바스크립트로 동적 렌더링 -->
+        </ul>
+
+        <!-- 빈 상태 메시지 -->
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon-wrap">
+            <span class="empty-icon">📝</span>
+          </div>
+          <h3 class="empty-title">등록된 할 일이 없습니다</h3>
+          <p class="empty-text">위 입력창에 해야 할 일을 추가하고 알찬 하루를 시작해보세요!</p>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
